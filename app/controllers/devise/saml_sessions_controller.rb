@@ -8,6 +8,9 @@ class Devise::SamlSessionsController < Devise::SessionsController
   else
     skip_before_action :verify_authenticity_token, raise: false
   end
+  
+  # Source: https://github.com/apokalipto/devise_saml_authenticatable/wiki/Supporting-multiple-authentication-strategies
+  after_action :store_winning_strategy, only: :create
 
   def new
     idp_entity_id = get_idp_entity_id(params)
@@ -60,5 +63,9 @@ class Devise::SamlSessionsController < Devise::SessionsController
 
   def generate_idp_logout_response(saml_config, logout_request_id)
     OneLogin::RubySaml::SloLogoutresponse.new.create(saml_config, logout_request_id, nil)
+  end
+
+  def store_winning_strategy
+    warden.session(:user)[:strategy] = warden.winning_strategies[:user].class.name.demodulize.underscore.to_sym
   end
 end
